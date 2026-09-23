@@ -11,9 +11,15 @@ void locker_reset(void) {
 }
 
 void locker_add_digit(key_t key) {
-    if (len < PIN_LEN) {
-        attempt[len++] = key;
+    if (len == PIN_LEN) {
+        /* Buffer full but not yet submitted: locker_check() only runs
+           when '#' is pressed. Without this, a 5th (6th, ...) keypress
+           would be silently dropped and '#' would judge the stale
+           first four digits. Start a fresh attempt with this key
+           instead. */
+        len = 0;
     }
+    attempt[len++] = key;
 }
 
 locker_status_t locker_check(void) {

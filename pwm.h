@@ -34,7 +34,6 @@ extern "C" {
 unsigned long milliseconds(void);
 void tick_update(void);
 void pwm_init(void);
-void setPulse(unsigned int counts);
 void setPosUnlock(void);
 void setPosLock(void);
 

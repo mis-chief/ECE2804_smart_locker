@@ -25,21 +25,30 @@ static state_t prev_state;  // used when waking from sleep
 static unsigned long locking_start;     // used for checking for block
 
 static void handle_locked(key_t key, unsigned long now) {
-    if (key == KEY_NONE) {
-        return;
-    }
-
-    locker_add_digit(key);
+  if (key == KEY_NONE) {
+    return;
+  }
+  if (key == KEY_POUND) {
     switch (locker_check()) {
         case LOCKER_MATCH:
-            setPosUnlock();
-            state = STATE_UNLOCKED;
-            break;
+        setPosUnlock();
+        state = STATE_UNLOCKED;
+        break;
         case LOCKER_WRONG:
-            /* stay locked; buffer already reset for next try */
-            break;
-        default: /* LOCKER_IN_PROGRESS */ break;
+        /* stay locked; buffer already reset for next try */
+        break;
+        default:
+        /* LOCKER_IN_PROGRESS: '#' pressed with fewer than 4 digits.
+           Discard the partial entry so leftover digits can't poison
+           the next attempt. */
+        locker_reset();
+        break;
     }
+  }
+  else if (key >= KEY_0 && key <= KEY_9) {
+    locker_add_digit(key);
+  }
+  /* other keys (KEY_STAR) are meaningless while locked: ignore */
 }
 static void handle_unlocked(key_t key, unsigned long now) {
     if (key == KEY_STAR) {
@@ -86,6 +95,7 @@ int main() {
         } else if (state != STATE_SLEEP && now - last_activity >= 3000UL) {
             prev_state = state;
             state = STATE_SLEEP;
+            locker_reset(); /* clear code once mcu sleeps - start fresh on wakeup */
         }
 
         switch (state) {

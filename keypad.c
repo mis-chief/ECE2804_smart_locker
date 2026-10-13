@@ -15,10 +15,13 @@
  */
 void adc_init(void)
 {
-    ADMUX  = (1 << REFS0) | KEYPAD_CHANNEL;
+    ADMUX  = (1 << REFS0) | KEYPAD_CHANNEL; /* reference to supply voltage
+                                            since resistor ladder is tied 
+                                            to Vcc. Use PC0/A0 */
 
     /* no ADATE: the ADC only converts when adc_read() asks it to */
     ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+    /* enable adc and set prescalar to /128 for a 125kHz clock */
 
     /* dummy conversion: the first one after enabling takes 25 cycles
      * (instead of 13) while internal circuitry initializes, and its
@@ -34,7 +37,7 @@ void adc_init(void)
  * 10-bit result (0-1023). */
 unsigned int adc_read(void)
 {
-    ADCSRA |= (1 << ADSC);              /* start */
+    ADCSRA |= (1 << ADSC);              /* start conversion */
     while (ADCSRA & (1 << ADSC)) { }   /* hardware clears it when done */
     return ADC;
 }

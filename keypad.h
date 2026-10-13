@@ -59,6 +59,10 @@
 #define KEYPAD_CHANNEL 0    /* ADC0 = PC0; change if keypad wired elsewhere */
 #define ADC0D   0           /* DIDR0 bit for the ADC0 digital input buffer */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     KEY_NONE = 0,
     KEY_0,
@@ -78,5 +82,9 @@ typedef enum {
 void adc_init(void);
 unsigned int adc_read(void);
 key_t keypad_read();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

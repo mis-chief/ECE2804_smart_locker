@@ -15,7 +15,7 @@ unsigned long milliseconds(void)
  * never miss an update. */
 void tick_update(void)
 {
-    if (TIFR1 & (1 << TOV1)) {
+    if (TIFR1 & (1 << TOV1)) {  /* read - if 1 then overflow has occured */
         TIFR1 = (1 << TOV1);    /* write 1 to clear */
         g_ms += TICK_MS;
     }

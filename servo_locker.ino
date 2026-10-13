@@ -1,5 +1,7 @@
 /* Arduino Uno sketch: servo-actuated keypad lock.
  *
+
+
  * The Arduino core supplies main(), which calls setup() once and then
  * calls loop() forever. All real work lives in the C modules (fsm.c,
  * pwm.c, keypad.c, locker.c) next to this sketch; this file is only the
@@ -15,12 +17,31 @@
 #include "fsm.h"
 #include "keypad.h"
 
+/* Uncomment to print the raw keypad ADC reading twice a second, for
+   checking it against the thresholds in keypad.h. */
+//#define DEBUG_ADC
+
 void setup() {
     fsm_init();
     Serial.begin(9600);
+    /* Boot banner: proves the MCU is running and the serial link works
+       before any key is pressed. If it only shows up at 600 or 4800 baud
+       the chip is on its internal oscillator (1 MHz / 8 MHz), not the
+       16 MHz crystal -- see "Standalone ATmega328P" in the README. */
+    Serial.println(F("servo_locker boot"));
 }
 
 void loop() {
+#ifdef DEBUG_ADC
+    static unsigned long last_dump;
+    if (millis() - last_dump >= 500UL) {
+        last_dump = millis();
+        Serial.print(F("adc="));
+        Serial.println(adc_read());
+    }
+#endif
+
+
     /* Poll the keypad exactly ONCE per iteration: keypad_read() is
        edge-triggered (one event per physical press), so calling it both
        here for debugging and inside fsm_tick() would swallow every

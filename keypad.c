@@ -17,7 +17,7 @@ void adc_init(void)
 {
     ADMUX  = (1 << REFS0) | KEYPAD_CHANNEL; /* reference to supply voltage
                                             since resistor ladder is tied 
-                                            to Vcc. Use PC0/A0 */
+                                            to Vcc. Use PC0/A0 by default */
 
     /* no ADATE: the ADC only converts when adc_read() asks it to */
     ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
@@ -40,6 +40,28 @@ unsigned int adc_read(void)
     ADCSRA |= (1 << ADSC);              /* start conversion */
     while (ADCSRA & (1 << ADSC)) { }   /* hardware clears it when done */
     return ADC;
+}
+
+/* Channel adc_init() selected; tracked so adc_read_channel() knows when
+ * the multiplexer actually moves. */
+static unsigned char cur_channel = KEYPAD_CHANNEL;
+
+/* Select channel `ch` (0-7) and return one 10-bit conversion of it.
+ * Every caller sharing the ADC must go through here, otherwise a read
+ * could convert whichever channel the last caller left selected.
+ *
+ * After a channel change one conversion is thrown away: the sample-and-
+ * hold capacitor still carries charge from the previous input, and the
+ * keypad ladder's high source impedance can't swing it fully within one
+ * sample window. Costs one extra ~104 us conversion per switch. */
+unsigned int adc_read_channel(unsigned char ch)
+{
+    if (ch != cur_channel) {
+        ADMUX = (ADMUX & 0xF0) | (ch & 0x0F);  /* keep REFS/ADLAR, set MUX */
+        cur_channel = ch;
+        (void)adc_read();                      /* settle: discard */
+    }
+    return adc_read();
 }
 
 typedef struct {
@@ -79,7 +101,7 @@ static unsigned long last_edge_ms = 0UL - DEBOUNCE_MS;
 
 key_t keypad_read() {
     unsigned char i;
-    unsigned int adc = adc_read();    /* one consistent snapshot */
+    unsigned int adc = adc_read_channel(KEYPAD_CHANNEL); /* one consistent snapshot */
     key_t raw = KEY_NONE;
 
     for (i = 0; i < sizeof keymap / sizeof keymap[0]; ++i) {

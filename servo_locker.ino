@@ -12,14 +12,20 @@
  * Wiring:
  *   keypad (resistor ladder) -> A0  (ADC0 / PC0, see KEYPAD_CHANNEL)
  *   servo signal             -> D9  (OC1A / PB1)
+ *   servo current shunt      -> A1  (ADC1 / PC1, see CURRENT_CHANNEL)
  */
 
 #include "fsm.h"
 #include "keypad.h"
+#include "current.h"
 
 /* Uncomment to print the raw keypad ADC reading twice a second, for
    checking it against the thresholds in keypad.h. */
 //#define DEBUG_ADC
+
+/* Uncomment to print the averaged shunt voltage (mV) twice a second, for
+   picking BLOCK_THRESHOLD_MV in current.h. */
+#define DEBUG_CURRENT
 
 void setup() {
     fsm_init();
@@ -37,10 +43,17 @@ void loop() {
     if (millis() - last_dump >= 500UL) {
         last_dump = millis();
         Serial.print(F("adc="));
-        Serial.println(adc_read());
+        Serial.println(adc_read_channel(KEYPAD_CHANNEL));
     }
 #endif
-
+#ifdef DEBUG_CURRENT
+    static unsigned long last_cur;
+    if (millis() - last_cur >= 500UL) {
+        last_cur = millis();
+        Serial.print(F("shunt_mv="));
+        Serial.println(current_read_mv());
+    }
+#endif
 
     /* Poll the keypad exactly ONCE per iteration: keypad_read() is
        edge-triggered (one event per physical press), so calling it both

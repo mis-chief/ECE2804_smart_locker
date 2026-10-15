@@ -16,6 +16,7 @@ see `Arduino.h`; only the thin `.ino` wrapper does.
 | `keypad.c/.h`   | ADC + debounced keypad decoding (resistor ladder on ADC0) |
 | `pwm.c/.h`      | Timer1 50 Hz servo PWM on OC1A + millisecond tick clock |
 | `locker.c/.h`   | 4-digit passcode check |
+| `current.c/.h`  | Servo current sensing (shunt on ADC1) + `block_detected()` |
 
 ## Flashing
 
@@ -31,6 +32,7 @@ see `Arduino.h`; only the thin `.ino` wrapper does.
 |----------------------------|---------|---------|
 | Keypad resistor-ladder out | A0      | PC0 / ADC0 (`KEYPAD_CHANNEL` in `keypad.h`) |
 | Servo signal               | D9      | PB1 / OC1A |
+| Servo current shunt (top)  | A1      | PC1 / ADC1 (`CURRENT_CHANNEL` in `current.h`) |
 
 Default code is `1 2 3 4` (`locker.c`).
 
@@ -51,6 +53,7 @@ chip runs on its internal oscillator at 1 MHz and ignores the crystal.
    | 9, 10 XTAL | 16 MHz crystal across them, 22 pF from each to GND |
    | 15 PB1 / OC1A | Servo signal |
    | 23 PC0 / ADC0 | Keypad resistor-ladder out |
+   | 24 PC1 / ADC1 | Servo current shunt (top) |
 
 2. With the Uno running ArduinoISP: Tools → Board → **Arduino Uno**,
    Programmer → **Arduino as ISP**, then **Burn Bootloader** once to set

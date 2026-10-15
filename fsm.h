@@ -2,6 +2,7 @@
 #define fsm_h
 
 #include "keypad.h"   /* key_t */
+#define LOCK_TIMEOUT 250UL
 
 #ifdef __cplusplus
 extern "C" {

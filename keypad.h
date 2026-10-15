@@ -81,6 +81,7 @@ typedef enum {
 
 void adc_init(void);
 unsigned int adc_read(void);
+unsigned int adc_read_channel(unsigned char ch);
 key_t keypad_read();
 
 #ifdef __cplusplus

@@ -12,6 +12,7 @@ sleep after 3s timeout, wake on keypress
 #include "pwm.h"
 #include "keypad.h"
 #include "locker.h"
+#include "current.h"
 
 typedef enum {
   STATE_LOCKED,
@@ -60,17 +61,14 @@ static void handle_unlocked(key_t key, unsigned long now) {
   }
 }
 static void handle_locking(key_t key, unsigned long now) {
-  /*
-     if (now - locking_start >= LOCK_TIMEOUT) {      // ~500-1000 ms for the servo
-           if (block_detected()) {
-               setPosUnlock();       // door is blocked: abort and re-open
-               state = STATE_UNLOCKED;
-           } else {
-               state = STATE_LOCKED;
-           }
-       }
-    */
-  state = STATE_LOCKED;  // placeholder
+  if (now - locking_start >= LOCK_TIMEOUT) {      // ~500-1000 ms for the servo
+    if (block_detected()) {
+        setPosUnlock();       // door is blocked: abort and re-open
+        state = STATE_UNLOCKED;
+    } else {
+        state = STATE_LOCKED;
+    }
+  }
 }
 static void handle_sleep(key_t key, unsigned long now) {
   if (key != KEY_NONE) {
@@ -81,6 +79,7 @@ static void handle_sleep(key_t key, unsigned long now) {
 void fsm_init(void) {
   pwm_init();
   adc_init();
+  current_init();
   setPosLock(); /* physically assert the locked position: the FSM
                          starts in STATE_LOCKED, and an uncommanded servo
                          holds no torque at all */

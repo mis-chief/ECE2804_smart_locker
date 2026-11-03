@@ -37,6 +37,9 @@
  * to keep the pair from the same conversion */
 #define ADC     (*(volatile unsigned int*)0x78)
 
+/* AVcc reference shared by every channel, in mV */
+#define ADC_VREF_MV 5000UL
+
 /* ADMUX bits */
 #define REFS1   7   /* reference selection, with REFS0 */
 #define REFS0   6

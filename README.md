@@ -17,6 +17,7 @@ see `Arduino.h`; only the thin `.ino` wrapper does.
 | `pwm.c/.h`      | Timer1 50 Hz servo PWM on OC1A + millisecond tick clock |
 | `locker.c/.h`   | 4-digit passcode check |
 | `current.c/.h`  | Servo current sensing (shunt on ADC1) + `block_detected()` |
+| `battery.c/.h`  | 9 V battery voltage (divider on ADC3) + `battery_low()` + low-battery LED alert on D13 |
 
 ## Flashing
 
@@ -33,6 +34,19 @@ see `Arduino.h`; only the thin `.ino` wrapper does.
 | Keypad resistor-ladder out | A0      | PC0 / ADC0 (`KEYPAD_CHANNEL` in `keypad.h`) |
 | Servo signal               | D9      | PB1 / OC1A |
 | Servo current shunt (top)  | A1      | PC1 / ADC1 (`CURRENT_CHANNEL` in `current.h`) |
+| 9 V battery divider tap    | A3      | PC3 / ADC3 (`BATTERY_CHANNEL` in `battery.h`) |
+| Low-battery LED (1 k to GND) | D13   | PB5 (`BATTERY_LED_PIN` in `battery.h`) |
+
+The battery divider is 1 M (battery+ to A3) / 1 M (A3 to GND), with a
+≥100 nF cap from A3 to GND so the ADC sees a low source impedance. A
+fresh 9.6 V cell puts 4.8 V on A3, just under the 5 V reference.
+
+The battery is checked once per boot or wake, `BATTERY_CHECK_DELAY_MS`
+(500 ms) after it starts so the servo's inrush current has passed. A low
+reading latches the alert: the LED flashes for `BATTERY_FLASH_ON_MS`
+every `BATTERY_FLASH_PERIOD_MS` (20 ms every 5 s), starting right away,
+until the next wake re-checks. On the Uno the onboard "L" LED flashes
+with it.
 
 Default code is `1 2 3 4` (`locker.c`).
 
@@ -52,8 +66,10 @@ chip runs on its internal oscillator at 1 MHz and ignores the crystal.
    | 8 GND, 22 GND | GND (both) |
    | 9, 10 XTAL | 16 MHz crystal across them, 22 pF from each to GND |
    | 15 PB1 / OC1A | Servo signal |
+   | 19 PB5 | Low-battery LED (1 k to GND) |
    | 23 PC0 / ADC0 | Keypad resistor-ladder out |
    | 24 PC1 / ADC1 | Servo current shunt (top) |
+   | 26 PC3 / ADC3 | 9 V battery divider tap |
 
 2. With the Uno running ArduinoISP: Tools → Board → **Arduino Uno**,
    Programmer → **Arduino as ISP**, then **Burn Bootloader** once to set
@@ -79,3 +95,8 @@ chip is on the internal oscillator at 1 MHz or 8 MHz.
 If the banner prints but keys do not, uncomment `DEBUG_ADC` in
 `servo_locker.ino` to print raw ADC readings and compare them with the
 thresholds in `keypad.h`.
+
+To check the battery reading, uncomment `DEBUG_BATTERY` in
+`servo_locker.ino` and compare the printed `battery_mv=` with a
+multimeter across the battery; tune `BATTERY_LOW_MV` in `battery.h` from
+there.

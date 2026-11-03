@@ -6,7 +6,9 @@
 #define pwm_h
 
 #define DDRB (*(volatile unsigned char*)0x24)
+#define PORTB (*(volatile unsigned char*)0x25)
 #define PB1 1
+#define PB5 5
 
 #define TCCR1A (*(volatile unsigned char*)0x80)
 #define COM1A1 7

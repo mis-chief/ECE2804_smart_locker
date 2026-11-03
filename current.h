@@ -12,7 +12,6 @@
 #define CURRENT_CHANNEL    1       /* ADC1 = PC1 / A1 */
 #define ADC1D              1       /* DIDR0 bit for the ADC1 digital input buffer */
 #define CURRENT_SAMPLES    16      /* averaged per reading (~1.7 ms total) */
-#define ADC_VREF_MV        5000UL  /* AVcc reference, in mV */
 #define BLOCK_THRESHOLD_MV 200     /* placeholder: tune on hardware with DEBUG_CURRENT */
 
 #ifdef __cplusplus

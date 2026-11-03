@@ -22,7 +22,8 @@ unsigned int current_read_raw(void)
 
 unsigned int current_read_mv(void)
 {
-    /* 32-bit math: 1023 * 5000 overflows a 16-bit int */
+    /* 32-bit math: 1023 * 5000 overflows a 16-bit int 
+     * ADC_VREF_MV / 1024 is for converting to mv  */
     return (unsigned int)((unsigned long)current_read_raw() * ADC_VREF_MV / 1024);
 }
 

@@ -13,11 +13,14 @@
  *   keypad (resistor ladder) -> A0  (ADC0 / PC0, see KEYPAD_CHANNEL)
  *   servo signal             -> D9  (OC1A / PB1)
  *   servo current shunt      -> A1  (ADC1 / PC1, see CURRENT_CHANNEL)
+ *   9 V battery divider tap  -> A3  (ADC3 / PC3, see BATTERY_CHANNEL)
+ *   low-battery LED (1 K)    -> D13 (PB5, see BATTERY_LED_PIN)
  */
 
 #include "fsm.h"
 #include "keypad.h"
 #include "current.h"
+#include "battery.h"
 
 /* Uncomment to print the raw keypad ADC reading twice a second, for
    checking it against the thresholds in keypad.h. */
@@ -25,7 +28,11 @@
 
 /* Uncomment to print the averaged shunt voltage (mV) twice a second, for
    picking BLOCK_THRESHOLD_MV in current.h. */
-#define DEBUG_CURRENT
+//#define DEBUG_CURRENT
+
+/* Uncomment to print the averaged battery voltage (mV) twice a second, for
+   checking it against a multimeter and picking BATTERY_LOW_MV in battery.h. */
+#define DEBUG_BATTERY
 
 void setup() {
     fsm_init();
@@ -52,6 +59,14 @@ void loop() {
         last_cur = millis();
         Serial.print(F("shunt_mv="));
         Serial.println(current_read_mv());
+    }
+#endif
+#ifdef DEBUG_BATTERY
+    static unsigned long last_batt;
+    if (millis() - last_batt >= 500UL) {
+        last_batt = millis();
+        Serial.print(F("battery_mv="));
+        Serial.println(battery_read_mv());
     }
 #endif
 

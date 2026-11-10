@@ -1,10 +1,13 @@
 #include "current.h"
-#include "keypad.h"   /* ADC registers, adc_read_channel() */
+#include "keypad.h"   /* adc_read_channel(), ADC_VREF_MV */
+#include "regs.h"
 
 void current_init(void)
 {
+#if BLOCK_DETECT_ENABLE
     /* disable the digital input buffer on the analog pin, as for ADC0 */
     DIDR0 |= (1 << ADC1D);
+#endif
 }
 
 /* The servo draws current in pulses, not a steady level, so a single
@@ -22,12 +25,16 @@ unsigned int current_read_raw(void)
 
 unsigned int current_read_mv(void)
 {
-    /* 32-bit math: 1023 * 5000 overflows a 16-bit int 
+    /* 32-bit math: 1023 * 5000 overflows a 16-bit int
      * ADC_VREF_MV / 1024 is for converting to mv  */
     return (unsigned int)((unsigned long)current_read_raw() * ADC_VREF_MV / 1024);
 }
 
 unsigned char block_detected(void)
 {
+#if BLOCK_DETECT_ENABLE
     return current_read_mv() > BLOCK_THRESHOLD_MV;
+#else
+    return 0;   /* no shunt fitted: A1 floats, so never trust it */
+#endif
 }

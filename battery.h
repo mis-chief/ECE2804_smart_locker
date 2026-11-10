@@ -3,7 +3,7 @@
 
 /* 9 V battery monitoring through a resistor divider.
  *
- * Hardware: R1 (top) from battery+ to A3, R2 (bottom) from A2 to GND,
+ * Hardware: R1 (top) from battery+ to A2, R2 (bottom) from A2 to GND,
  * so V(A2) = V_batt * R2 / (R1 + R2). With 1 M / 1 M a fresh 9.6 V cell
  * puts 4.8 V on A2 -- just under the AVcc (5 V) reference shared with
  * the keypad, so there is little headroom.
@@ -19,7 +19,6 @@
  * the reference sags with the battery and the reading comes out high. */
 
 #define BATTERY_CHANNEL    2       /* ADC2 = PC2 / A2 */
-#define ADC2D              2       /* DIDR0 bit for the ADC2 digital input buffer */
 #define BATTERY_SAMPLES    16      /* averaged per reading (~1.7 ms total) */
 #define BATTERY_R1_KOHM    1000UL  /* divider top resistor (battery+ to A2) */
 #define BATTERY_R2_KOHM    1000UL  /* divider bottom resistor (A2 to GND) */
@@ -30,9 +29,10 @@
  * wake, BATTERY_CHECK_DELAY_MS after it starts; a low reading latches
  * the alert until the next battery_alert_reset(). milliseconds() moves
  * in 20 ms steps, so keep these times multiples of 20 ms. */
-#define BATTERY_LED_PIN         PB5     /* PORTB bit (pwm.h) */
+#define BATTERY_LED_PIN         PB5     /* D13, PORTB bit (regs.h) */
 #define BATTERY_CHECK_DELAY_MS  500UL   /* wait out the servo's inrush current */
-#define BATTERY_FLASH_PERIOD_MS 5000UL  /* start of one flash to the next; tune to awake time */
+#define BATTERY_FLASH_PERIOD_MS 5000UL  /* start of one flash to the next: ~3 flashes
+                                           per SLEEP_TIMEOUT_MS (15 s) awake window */
 #define BATTERY_FLASH_ON_MS     20UL    /* LED on-time per flash */
 
 #ifdef __cplusplus
@@ -43,7 +43,7 @@ extern "C" {
  * first battery check. */
 void battery_init(void);
 
-/* Averaged 10-bit reading of A3, 0-1023. */
+/* Averaged 10-bit reading of A2, 0-1023. */
 unsigned int battery_read_raw(void);
 
 /* Averaged battery voltage in millivolts, divider ratio applied
@@ -54,7 +54,8 @@ unsigned int battery_read_mv(void);
 unsigned char battery_low(void);
 
 /* Clear the latched alert, turn the LED off, and check the battery again
- * BATTERY_CHECK_DELAY_MS after `now`. Call on every wake. */
+ * BATTERY_CHECK_DELAY_MS after `now`. Call on every wake, and before
+ * sleeping (power-down would otherwise hold the LED lit). */
 void battery_alert_reset(unsigned long now);
 
 /* Non-blocking: runs the pending check, then flashes the LED for

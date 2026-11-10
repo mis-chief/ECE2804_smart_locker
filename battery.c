@@ -1,6 +1,7 @@
 #include "battery.h"
-#include "keypad.h"   /* ADC registers, adc_read_channel(), ADC_VREF_MV */
-#include "pwm.h"      /* DDRB/PORTB, milliseconds() */
+#include "keypad.h"   /* adc_read_channel(), ADC_VREF_MV */
+#include "pwm.h"      /* milliseconds() */
+#include "regs.h"
 
 static unsigned char alert_checked;  /* this wake's reading has been taken */
 static unsigned char alert_latched;  /* that reading was low */

@@ -1,38 +1,17 @@
-// defines registers/pins from datasheet for use in main program
-// unsigned char -> 8 bits
-// volatile because the hardware can overwrite the value
-
 #ifndef pwm_h
 #define pwm_h
 
-#define DDRB (*(volatile unsigned char*)0x24)
-#define PORTB (*(volatile unsigned char*)0x25)
-#define PB1 1
-#define PB5 5
-
-#define TCCR1A (*(volatile unsigned char*)0x80)
-#define COM1A1 7
-#define COM1A0 6
-#define WGM11 1
-
-#define TCCR1B (*(volatile unsigned char*)0x81)
-#define WGM13 4
-#define WGM12 3
-#define CS11 1
-
-#define ICR1H (*(volatile unsigned char*)0x87)
-#define ICR1L (*(volatile unsigned char*)0x86)
-
-#define OCR1AH (*(volatile unsigned char*)0x89)
-#define OCR1AL (*(volatile unsigned char*)0x88)
-
-#define TIFR1 (*(volatile unsigned char*)0x36)
-#define TOV1 0
+/* Timer1 fast PWM at 50 Hz on OC1A (PB1 / D9) for the servo, plus a
+ * millisecond clock counted from the same timer's overflows. */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Milliseconds since boot, NOT including time spent asleep. Timer1 is
+ * gated during power-down, so this counter stops while the chip is down;
+ * it is not a wall clock. Do not compare two readings taken across a
+ * sleep -- the FSM re-stamps its timers on wake (see fsm.c). */
 unsigned long milliseconds(void);
 void tick_update(void);
 void pwm_init(void);

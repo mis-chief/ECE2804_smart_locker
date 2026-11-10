@@ -1,6 +1,10 @@
 #ifndef keypad_h
 #define keypad_h
 
+/* Keypad on a resistor ladder: each key puts a different voltage on A0,
+ * read by the ADC. This module also owns the ADC itself; every other
+ * analog reader goes through adc_read_channel(). */
+
 // macros for keypad input values
 #define zero_l  335
 #define zero_h  352
@@ -27,40 +31,20 @@
 #define pound_l 353
 #define pound_h 373
 
-/* ---- ADC register definitions (ATmega328P) ---- */
-
-#define ADMUX   (*(volatile unsigned char*)0x7C)
-#define ADCSRA  (*(volatile unsigned char*)0x7A)
-#define DIDR0   (*(volatile unsigned char*)0x7E)
-
-/* 16-bit access reads ADCL before ADCH, which the hardware requires
- * to keep the pair from the same conversion */
-#define ADC     (*(volatile unsigned int*)0x78)
-
 /* AVcc reference shared by every channel, in mV */
 #define ADC_VREF_MV 5000UL
 
-/* ADMUX bits */
-#define REFS1   7   /* reference selection, with REFS0 */
-#define REFS0   6
-#define ADLAR   5   /* 0 -> right-adjusted 10-bit result */
-#define MUX3    3   /* input channel selection, with MUX2..0 */
-#define MUX2    2
-#define MUX1    1
-#define MUX0    0
-
-/* ADCSRA bits */
-#define ADEN    7   /* ADC enable */
-#define ADSC    6   /* start conversion; stays 1 while busy */
-#define ADIF    4   /* conversion complete flag */
-#define ADIE    3   /* interrupt enable (unused) */
-#define ADPS2   2   /* prescaler select, with ADPS1..0 */
-#define ADPS1   1
-#define ADPS0   0
-
 /* keypad hardware configuration */
-#define KEYPAD_CHANNEL 0    /* ADC0 = PC0; change if keypad wired elsewhere */
-#define ADC0D   0           /* DIDR0 bit for the ADC0 digital input buffer */
+#define KEYPAD_CHANNEL 0    /* ADC0 = PC0 / A0; change if keypad wired elsewhere */
+
+/* Debounce, counted in polls (one keypad_read() per loop pass), not ms,
+ * so the 20 ms clock step does not affect it. At roughly 0.1-0.15 ms per
+ * poll this is about 25 ms of stable agreement and 50 ms of required
+ * idle. If doubles appear, raise KEYPAD_IDLE_READS; if fast taps get
+ * missed, lower KEYPAD_STABLE_READS. Anything that slows the main loop
+ * (e.g. the DEBUG_* serial prints) stretches both. */
+#define KEYPAD_STABLE_READS 200u   /* same key this many polls -> press */
+#define KEYPAD_IDLE_READS   400u   /* no key this many polls -> released */
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,7 +69,7 @@ typedef enum {
 void adc_init(void);
 unsigned int adc_read(void);
 unsigned int adc_read_channel(unsigned char ch);
-key_t keypad_read();
+key_t keypad_read(void);
 
 #ifdef __cplusplus
 }

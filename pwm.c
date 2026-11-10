@@ -1,4 +1,5 @@
 #include "pwm.h"
+#include "regs.h"
 
 /* TOP = 39999 with /8 prescaler -> 50 Hz, overflow every 20 ms */
 #define TICK_MS 20UL

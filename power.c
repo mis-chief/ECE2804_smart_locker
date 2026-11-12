@@ -22,26 +22,28 @@ void power_init(void)
     PCIFR = (1 << PCIF2);            /* clear any wake flag left from boot */
 
 #if POWER_SERVO_CUTOFF_ENABLE
-    /* Servo supplied at boot: the FSM commands the lock position right
-     * after this. */
-    DDRD  |= (1 << POWER_SERVO_CUTOFF_PIN);
-    PORTD |= (1 << POWER_SERVO_CUTOFF_PIN);
+    /* D4 drives the 2N3904 base of the level shifter.
+     * LOW = 2N3904 off = gate pulled to 9 V by the divider = IRFZ44N ON.
+     * So boot with D4 LOW: the FSM commands the lock position right after
+     * this and the servo needs its supply. */
+    DDRD   |=  (1 << POWER_SERVO_CUTOFF_PIN);
+    PORTD  &= ~(1 << POWER_SERVO_CUTOFF_PIN);
 #endif
 #if POWER_LOAD_CUTOFF_ENABLE
-    DDRD  |= (1 << POWER_LOAD_CUTOFF_PIN);
-    PORTD |= (1 << POWER_LOAD_CUTOFF_PIN);
+    DDRD   |=  (1 << POWER_LOAD_CUTOFF_PIN);
+    PORTD  |=  (1 << POWER_LOAD_CUTOFF_PIN);
 #endif
 }
 
-/* Low-side N-channel: HIGH closes the switch and supplies the load; the
- * 10k gate pull-down holds it open whenever the MCU has no defined output. */
+
+
 void power_servo_supply(unsigned char on)
 {
 #if POWER_SERVO_CUTOFF_ENABLE
     if (on) {
-        PORTD |=  (1 << POWER_SERVO_CUTOFF_PIN);   /* gate high -> servo on  */
+        PORTD &= ~(1 << POWER_SERVO_CUTOFF_PIN);   /* D4 low  -> servo on  */
     } else {
-        PORTD &= ~(1 << POWER_SERVO_CUTOFF_PIN);   /* gate low  -> servo off */
+        PORTD |=  (1 << POWER_SERVO_CUTOFF_PIN);   /* D4 high -> servo off */
     }
 #else
     (void)on;

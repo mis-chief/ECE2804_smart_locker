@@ -77,6 +77,23 @@ To check a board's stored record against `sha256sum` (needs `xxd`):
 
 The last line must print the stored hash when the code is `1234`.
 
+For a demo without a programmer, uncomment `#define DEBUG_PASSCODE` in
+`servo_locker.ino`. The serial monitor then echoes every key press
+(`Key Pressed: 5`), and each time a new code is saved it shows the code and
+the salt and hash read back from EEPROM:
+
+    New passcode saved to EEPROM.
+    [DEBUG] new code: 5678
+    [DEBUG] salt: <32 hex digits>
+    [DEBUG] hash: <64 hex digits>
+
+To check them on a PC (no `xxd` needed), paste the printed salt and code
+into the line below. Its output must equal the printed hash:
+
+    { printf "$(echo <salt> | sed 's/../\\x&/g')"; printf 5678; } | sha256sum
+
+This prints the code in plain text, so leave it off in normal use.
+
 ## Tests
 
 `bash test/run_tests.sh` (needs `gcc` and `sha256sum`) builds and runs, on

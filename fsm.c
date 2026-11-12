@@ -138,9 +138,10 @@ static void handle_reprogram(key_t key, unsigned long now)
     else if (key == KEY_POUND) {
         if (new_len == PIN_LEN) {
             locker_set_code(new_code);   /* persists through power loss */
-            clear_new_code();
             state = STATE_UNLOCKED;
             fsm_on_event(FSM_EVT_CODE_SAVED);
+            fsm_on_code_saved(new_code); /* debug display, before the wipe */
+            clear_new_code();
         } else {
             clear_new_code();        /* incomplete: clear and let them retype */
             fsm_on_event(FSM_EVT_ENTRY_INCOMPLETE);

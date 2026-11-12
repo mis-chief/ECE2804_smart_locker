@@ -26,6 +26,9 @@
 #include "current.h"
 #include "battery.h"
 #include "ui.h"
+#include "locker.h"
+#include "eeprom.h"
+#include "sha256.h"
 
 /* Uncomment to print the raw keypad ADC reading twice a second, for
    checking it against the thresholds in keypad.h. */
@@ -39,16 +42,79 @@
    checking it against a multimeter and picking BATTERY_LOW_MV in battery.h. */
 //#define DEBUG_BATTERY
 
+/* Uncomment to print every key press ("Key Pressed: 5"), and each newly
+   saved passcode with the salt and hash read back from EEPROM, so the hash
+   can be checked with sha256sum (see README). Prints codes in plain text:
+   demo and testing only. */
+//#define DEBUG_PASSCODE
+
 /* Any DEBUG_* print slows the main loop, which stretches the keypad's
    poll-count debounce (see keypad.h). Leave them off in normal use. */
 
 /* ---- the user-facing messages ---------------------------------------- */
 
-/* One '*' per accepted digit: the code itself never goes out over serial. */
+/* One '*' per accepted digit: the code itself never goes out over serial,
+   except through the DEBUG_PASSCODE prints (debug_print_key() and
+   fsm_on_code_saved()). */
 void fsm_on_digit(unsigned char digit) {
     (void)digit;
     Serial.print('*');
     ui_digit();
+}
+
+#ifdef DEBUG_PASSCODE
+/* Echo each key press, digits included. Called from loop() with the one
+   keypad_read() result per pass, so it never consumes a key itself. */
+static void debug_print_key(key_t key) {
+    switch (key) {
+        case KEY_0:    Serial.println(F("Key Pressed: 0")); break;
+        case KEY_1:    Serial.println(F("Key Pressed: 1")); break;
+        case KEY_2:    Serial.println(F("Key Pressed: 2")); break;
+        case KEY_3:    Serial.println(F("Key Pressed: 3")); break;
+        case KEY_4:    Serial.println(F("Key Pressed: 4")); break;
+        case KEY_5:    Serial.println(F("Key Pressed: 5")); break;
+        case KEY_6:    Serial.println(F("Key Pressed: 6")); break;
+        case KEY_7:    Serial.println(F("Key Pressed: 7")); break;
+        case KEY_8:    Serial.println(F("Key Pressed: 8")); break;
+        case KEY_9:    Serial.println(F("Key Pressed: 9")); break;
+        case KEY_STAR: Serial.println(F("Key Pressed: *")); break;
+        case KEY_POUND:Serial.println(F("Key Pressed: #")); break;
+        default: break;  /* KEY_NONE */
+    }
+}
+
+/* Print n EEPROM bytes from addr as lowercase hex with leading zeros, the
+   same format sha256sum uses. */
+static void print_ee_hex(unsigned int addr, unsigned int n) {
+    static const char hexdig[] = "0123456789abcdef";
+    for (unsigned int i = 0; i < n; i++) {
+        unsigned char b = eeprom_read(addr + i);
+        Serial.print(hexdig[b >> 4]);
+        Serial.print(hexdig[b & 0x0F]);
+    }
+    Serial.println();
+}
+#endif
+
+/* Debug only: show the code just saved and the salt + hash as they now
+   sit in EEPROM. Read back from EEPROM, not RAM, to prove the save. */
+void fsm_on_code_saved(const key_t *code) {
+#ifdef DEBUG_PASSCODE
+    Serial.print(F("[DEBUG] new code: "));
+    for (unsigned int i = 0; i < PIN_LEN; i++) {
+        Serial.print((char)('0' + (code[i] - KEY_0)));
+    }
+    Serial.println();
+    Serial.print(F("[DEBUG] salt: "));
+    print_ee_hex(LOCKER_EE_SALT_ADDR, LOCKER_SALT_LEN);
+    Serial.print(F("[DEBUG] hash: "));
+    print_ee_hex(LOCKER_EE_HASH_ADDR, SHA256_DIGEST_LEN);
+    if (eeprom_read(LOCKER_EE_MAGIC_ADDR) != LOCKER_EE_MAGIC) {
+        Serial.println(F("[DEBUG] WARNING: EEPROM record not marked valid"));
+    }
+#else
+    (void)code;
+#endif
 }
 
 void fsm_on_password_result(unsigned char ok) {
@@ -149,21 +215,9 @@ void loop() {
        keypress before the FSM could see it. */
     key_t key = keypad_read();
 
-    switch (key) {
-        case KEY_0:    Serial.println(F("Key Pressed: 0")); break;
-        case KEY_1:    Serial.println(F("Key Pressed: 1")); break;
-        case KEY_2:    Serial.println(F("Key Pressed: 2")); break;
-        case KEY_3:    Serial.println(F("Key Pressed: 3")); break;
-        case KEY_4:    Serial.println(F("Key Pressed: 4")); break;
-        case KEY_5:    Serial.println(F("Key Pressed: 5")); break;
-        case KEY_6:    Serial.println(F("Key Pressed: 6")); break;
-        case KEY_7:    Serial.println(F("Key Pressed: 7")); break;
-        case KEY_8:    Serial.println(F("Key Pressed: 8")); break;
-        case KEY_9:    Serial.println(F("Key Pressed: 9")); break;
-        case KEY_STAR: Serial.println(F("Key Pressed: *")); break;
-        case KEY_POUND:Serial.println(F("Key Pressed: #")); break;
-        default: break;  /* KEY_NONE */
-    }
+#ifdef DEBUG_PASSCODE
+    debug_print_key(key);
+#endif
 
     fsm_tick(key);
 

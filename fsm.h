@@ -53,6 +53,11 @@ void fsm_on_digit(unsigned char digit);
 /* A full code was submitted: ok = 1 correct, 0 wrong. */
 void fsm_on_password_result(unsigned char ok);
 
+/* A new code was just saved (called after FSM_EVT_CODE_SAVED, before the
+ * reprogram buffer is wiped). `code` holds PIN_LEN digit keys
+ * (KEY_0..KEY_9). For debug display only; do not keep the pointer. */
+void fsm_on_code_saved(const key_t *code);
+
 #ifdef __cplusplus
 }
 #endif
